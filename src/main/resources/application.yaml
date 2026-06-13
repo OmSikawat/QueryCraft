@@ -1,0 +1,61 @@
+spring:
+  # Keep this to block Ollama from crashing the embedding setup!
+  autoconfigure:
+    exclude:
+    - org.springframework.ai.model.ollama.autoconfigure.OllamaEmbeddingAutoConfiguration
+    - org.springframework.ai.model.google.genai.autoconfigure.chat.GoogleGenAiChatAutoConfiguration
+
+
+  application:
+    name: enterprise
+
+  # PostgreSQL Connection
+  datasource:
+    url: jdbc:postgresql://localhost:5432/querycraft_db
+    username: ${PG_USER}
+    password: ${PG_PASS}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # MongoDB Connection
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_USER}:${MONGO_PASS}@localhost:27017/querycraft_nosql?authSource=admin
+
+  # ==========================================
+  # AI Hybrid Configuration
+  # ==========================================
+  ai:
+    google:
+      genai:
+        embedding:
+          # NO project-id or location here! Just the API key.
+          api-key: ${GEMINI_API_KEY}
+
+          # NEW IN M4: You must nest options under 'text'
+          text:
+            options:
+              model: gemini-embedding-001
+
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        enabled: true
+        options:
+          model: qwen2.5-coder
+      embedding:
+        enabled: false
+
+# MinIO Connection
+minio:
+  endpoint: http://localhost:9000
+  access-key: ${MINIO_USER}
+  secret-key: ${MINIO_PASS}
+  bucket: querycraft-files

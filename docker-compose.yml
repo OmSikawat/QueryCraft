@@ -1,0 +1,79 @@
+services:
+  # 1. PostgreSQL (Database)
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: qc-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: querycraft_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 1b. pgAdmin (UI for PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: qc-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@querycraft.com
+      PGADMIN_DEFAULT_PASSWORD: password123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # 2. MongoDB (Database)
+  mongodb:
+    image: mongo:latest
+    container_name: qc-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+  # 2b. Mongo Express (UI for MongoDB)
+  mongo-express:
+    image: mongo-express
+    container_name: qc-mongo-express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@qc-mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  # 3. MinIO (Storage + Built-in UI)
+  minio:
+    image: minio/minio
+    container_name: qc-minio
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+      MINIO_NOTIFY_WEBHOOK_ENABLE_qc: on
+      MINIO_NOTIFY_WEBHOOK_ENDPOINT_qc: http://172.22.0.1:8080/api/webhook/minio
+    ports:
+      - "9000:9000" # API Port
+      - "9001:9001" # Web Console Port
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  minio_data:
